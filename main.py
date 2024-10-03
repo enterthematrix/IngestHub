@@ -16,7 +16,8 @@ from wtforms.validators import DataRequired
 
 # Import your forms from the forms.py
 from forms import RegisterForm, LoginForm, TemplateForm
-from schema import User, IngestionPattern, IngestionPatternJobTemplateRelationship, JobTemplate
+#from schema import User, IngestionPattern, IngestionPatternJobTemplateRelationship, JobTemplate
+from db_manager import User, IngestionPattern, IngestionPatternJobTemplateRelationship, JobTemplate
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('FLASK_KEY')
@@ -210,6 +211,7 @@ def source_runtime_parameters():
     form = DynamicForm()
     if form.validate_on_submit():
         # Collect field data from dynamically generated form
+        # Get updated source configs
         updated_source_configs = {key: getattr(form, key).data for key in source_configs}
         if target_configs:
             return redirect(url_for('target_runtime_parameters', source=source, destination=destination,
@@ -226,7 +228,8 @@ def source_runtime_parameters():
 def target_runtime_parameters():
     source = request.args.get('source')
     destination = request.args.get('destination')
-    source_configs = ast.literal_eval(request.args.get('updated_source_configs')).items()
+    # source_configs = ast.literal_eval(request.args.get('updated_source_configs')).items()
+    source_configs = request.args.get('updated_source_configs')
     # for key,value in ast.literal_eval(request.args.get('updated_source_configs')).items():
     #     print(f"{key}:{value}")
     job_template = get_job_template(source, destination)
@@ -237,11 +240,21 @@ def target_runtime_parameters():
     if form.validate_on_submit():
         # Collect field data from dynamically generated form
         updated_target_configs = {key: getattr(form, key).data for key in target_configs}
-        return redirect(url_for('load_templates', source_configs=source_configs, target_configs=updated_target_configs,
+        return redirect(url_for('submit_job', source_configs=source_configs, target_configs=updated_target_configs,
                                 logged_in=current_user.is_authenticated))
 
     return render_template('target.html', form=form, logged_in=current_user.is_authenticated)
 
+@app.route('/submit-job', methods=['GET', 'POST'])
+@login_required
+def submit_job():
+    source_configs = ast.literal_eval(request.args.get('source_configs'))
+    target_configs = ast.literal_eval(request.args.get('target_configs'))
+    # source_configs = request.args.get('source_configs')
+    # target_configs = request.args.get('target_configs')
+    print(type(source_configs))
+    print(type(target_configs))
+    return f"source:{source_configs}  | target:{target_configs}"
 
 @app.route('/logout')
 def logout():
