@@ -13,9 +13,10 @@ from wtforms.validators import DataRequired
 
 from db_manager import User, IngestionPattern, IngestionPatternJobTemplateRelationship, JobTemplate
 from forms import RegisterForm, LoginForm, TemplateForm
+from streamsets_manager import StreamSetsManager
 
 
-class IngestAppConfig:
+class IngestHubConfig:
     def __init__(self):
         self.app = Flask(__name__)
         self.configure_app()
@@ -64,7 +65,7 @@ class Authenticator:
 
 
 # Routes class to handle all routing and app logic
-class IngestAppRoutes:
+class IngestHubRoutes:
     def __init__(self, app, db, form_generator, job_template_manager):
         self.app = app
         self.db = db
@@ -162,7 +163,7 @@ class IngestAppRoutes:
             destination = request.args.get('destination')
             job_template = self.job_template_manager.get_job_template(source, destination)
             source_configs = job_template.source_runtime_parameters
-            DynamicForm = self.form_generator.generate_form(source_configs)
+            DynamicForm = self.form_generator.generate_form(source_configs,job_template.sch_job_template_id,submit_text="Next")
             form = DynamicForm()
             if form.validate_on_submit():
                 updated_source_configs = {key: getattr(form, key).data for key in source_configs}
@@ -179,11 +180,11 @@ class IngestAppRoutes:
             source_configs = request.args.get('updated_source_configs')
             job_template = self.job_template_manager.get_job_template(source, destination)
             target_configs = job_template.destination_runtime_parameters
-            DynamicForm = self.form_generator.generate_form(target_configs)
+            DynamicForm = self.form_generator.generate_form(target_configs,job_template.sch_job_template_id,submit_text="Submit Job")
             form = DynamicForm()
             if form.validate_on_submit():
                 updated_target_configs = {key: getattr(form, key).data for key in target_configs}
-                return redirect(url_for('submit_job', source_configs=source_configs, target_configs=updated_target_configs,
+                return redirect(url_for('submit_job', job_template_id=job_template.sch_job_template_id, source_configs=source_configs, target_configs=updated_target_configs,
                                         logged_in=current_user.is_authenticated))
             return render_template('target.html', form=form, logged_in=current_user.is_authenticated)
 
@@ -192,7 +193,8 @@ class IngestAppRoutes:
         def submit_job():
             source_configs = ast.literal_eval(request.args.get('source_configs'))
             target_configs = ast.literal_eval(request.args.get('target_configs'))
-            return f"source:{source_configs} | target:{target_configs}"
+            sch_job_template_id = request.args.get('job_template_id')
+            return f"source:{source_configs} | target:{target_configs} | template_id:{sch_job_template_id}"
 
         @self.app.route('/logout')
         def logout():
@@ -228,28 +230,37 @@ class JobTemplateManager:
 # Form generator class dynamic form generation
 class FormGenerator:
     @staticmethod
-    def generate_form(fields_dict):
+    def generate_form(fields_dict,job_template_id,submit_text):
         class DynamicForm(FlaskForm):
             pass
 
+        streamsets_manager = StreamSetsManager()
+        job_template_static_params = streamsets_manager.get_job_template_static_params(job_template_id)
         # Dynamically add StringFields using dictionary keys as labels and values as default values
         for label, default_value in fields_dict.items():
-            setattr(DynamicForm, label, StringField(label, default=default_value, validators=[DataRequired()]))
-        setattr(DynamicForm, 'next', SubmitField('Next'))
+            if label in job_template_static_params:
+                # disable static input fields
+                setattr(DynamicForm, label, StringField(label, render_kw={'disabled': 'disabled'}, default=default_value, validators=[DataRequired()]))
+            else:
+                setattr(DynamicForm, label, StringField(label, default=default_value, validators=[DataRequired()]))
+            setattr(DynamicForm, submit_text, SubmitField(submit_text))
         return DynamicForm
 
 
 if __name__ == "__main__":
-    app_config = IngestAppConfig()
+    ingest_hub = IngestHubConfig()
     # Make sure tables are created
-    app_config.create_tables()
+    ingest_hub.create_tables()
     # Configure authentication
-    authenticator = Authenticator(app_config.app, app_config.db)
+    authenticator = Authenticator(ingest_hub.app, ingest_hub.db)
     # Instance for form generation
     form_generator = FormGenerator()
     # Instance for managing job templates
-    job_template_manager = JobTemplateManager(app_config.db)
+    job_template_manager = JobTemplateManager(ingest_hub.db)
     # Set up app routes
-    app_routes = IngestAppRoutes(app_config.app, app_config.db, form_generator, job_template_manager)
+    app_routes = IngestHubRoutes(ingest_hub.app, ingest_hub.db, form_generator, job_template_manager)
     # Start the app
-    app_config.run()
+    ingest_hub.run()
+
+
+
