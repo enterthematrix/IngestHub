@@ -12,7 +12,7 @@ from wtforms.fields.simple import StringField, SubmitField
 from wtforms.validators import DataRequired
 
 from db_manager import User, IngestionPattern, IngestionPatternJobTemplateRelationship, JobTemplate
-from forms import RegisterForm, LoginForm, TemplateForm
+from forms import RegisterForm, LoginForm, TemplateForm, FormGenerator, JobInstanceSuffixForm
 from streamsets_manager import StreamSetsManager
 
 
@@ -51,7 +51,7 @@ class IngestHubConfig:
 
 
 # Authenticator class to handle user authentication
-class Authenticator:
+class IngestHubAuthenticator:
     def __init__(self, app, db):
         self.login_manager = LoginManager()
         self.login_manager.init_app(app)
@@ -184,9 +184,31 @@ class IngestHubRoutes:
             form = DynamicForm()
             if form.validate_on_submit():
                 updated_target_configs = {key: getattr(form, key).data for key in target_configs}
-                return redirect(url_for('submit_job', job_template_id=job_template.sch_job_template_id, source_configs=source_configs, target_configs=updated_target_configs,
+                return redirect(url_for('job_suffix', job_template_id=job_template.sch_job_template_id, source_configs=source_configs, target_configs=updated_target_configs,
                                         logged_in=current_user.is_authenticated))
             return render_template('target.html', form=form, logged_in=current_user.is_authenticated)
+
+        @self.app.route('/job-suffix', methods=['GET','POST'])
+        @login_required
+        def job_suffix():
+            source_configs = ast.literal_eval(request.args.get('source_configs'))
+            target_configs = ast.literal_eval(request.args.get('target_configs'))
+            suffix_parameters = source_configs | target_configs
+            sch_job_template_id = request.args.get('job_template_id')
+            form = JobInstanceSuffixForm()
+            suffix_list = ['Counter','Timestamp','Parameter Value']
+            form.instance_name_suffix.choices.extend([(suffix, suffix) for suffix in suffix_list])
+            form.suffix_parameter_name.choices.extend([(suffix_parameter, suffix_parameter) for suffix_parameter in suffix_parameters])
+
+            if form.validate_on_submit():
+                instance_name_suffix = form.instance_name_suffix.data
+                suffix_parameter_name = form.suffix_parameter_name.data
+                return redirect(
+                    url_for('submit_job', job_template_id=sch_job_template_id, source_configs=source_configs, target_configs=target_configs,
+                            suffix_parameter_name=suffix_parameter_name, instance_name_suffix=instance_name_suffix, logged_in=current_user.is_authenticated))
+
+            return render_template('job-suffix.html', form=form, logged_in=current_user.is_authenticated)
+
 
         @self.app.route('/submit-job', methods=['GET', 'POST'])
         @login_required
@@ -194,7 +216,9 @@ class IngestHubRoutes:
             source_configs = ast.literal_eval(request.args.get('source_configs'))
             target_configs = ast.literal_eval(request.args.get('target_configs'))
             sch_job_template_id = request.args.get('job_template_id')
-            return f"source:{source_configs} | target:{target_configs} | template_id:{sch_job_template_id}"
+            instance_name_suffix = request.args.get('instance_name_suffix')
+            suffix_parameter_name = request.args.get('suffix_parameter_name')
+            return f"source:{source_configs} | target:{target_configs} | template_id:{sch_job_template_id} | instance_name_suffix:{instance_name_suffix} | suffix_parameter_name:{suffix_parameter_name}"
 
         @self.app.route('/logout')
         def logout():
@@ -227,32 +251,12 @@ class JobTemplateManager:
                     return job_template
 
 
-# Form generator class dynamic form generation
-class FormGenerator:
-    @staticmethod
-    def generate_form(fields_dict,job_template_id,submit_text):
-        class DynamicForm(FlaskForm):
-            pass
-
-        streamsets_manager = StreamSetsManager()
-        job_template_static_params = streamsets_manager.get_job_template_static_params(job_template_id)
-        # Dynamically add StringFields using dictionary keys as labels and values as default values
-        for label, default_value in fields_dict.items():
-            if label in job_template_static_params:
-                # disable static input fields
-                setattr(DynamicForm, label, StringField(label, render_kw={'disabled': 'disabled'}, default=default_value, validators=[DataRequired()]))
-            else:
-                setattr(DynamicForm, label, StringField(label, default=default_value, validators=[DataRequired()]))
-            setattr(DynamicForm, submit_text, SubmitField(submit_text))
-        return DynamicForm
-
-
 if __name__ == "__main__":
     ingest_hub = IngestHubConfig()
     # Make sure tables are created
     ingest_hub.create_tables()
     # Configure authentication
-    authenticator = Authenticator(ingest_hub.app, ingest_hub.db)
+    authenticator = IngestHubAuthenticator(ingest_hub.app, ingest_hub.db)
     # Instance for form generation
     form_generator = FormGenerator()
     # Instance for managing job templates
