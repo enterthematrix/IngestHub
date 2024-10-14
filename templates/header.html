@@ -4,8 +4,7 @@
     <meta charset="utf-8"/>
     <meta
             name="viewport"
-            content="width=device-width, initial-scale=1, shrink-to-fit=no"
-    />
+            content="width=device-width, initial-scale=1, shrink-to-fit=no"/>
     <meta name="description" content=""/>
     <meta name="author" content=""/>
     <title>StreamSets Self-Service Ingestion</title>
@@ -17,7 +16,6 @@
             type="image/x-icon"
             href="{{ url_for('static', filename='assets/favicon.ico') }}"
     />
-    <!-- Font Awesome icons (free version)-->
     <script
             src="https://use.fontawesome.com/releases/v6.3.0/js/all.js"
             crossorigin="anonymous"
@@ -59,7 +57,7 @@
         </button>
         <div class="collapse navbar-collapse" id="navbarResponsive">
             <ul class="navbar-nav ms-auto py-4 py-lg-0">
-                <!-- TODO: Only show Login/Register if user is logged out. Otherwise show "Log Out" -->
+                <!-- Only show Login/Register if user is logged out. Otherwise show "Log Out" -->
                 {% if not logged_in: %}
                 <li class="nav-item">
                     <a
@@ -97,10 +95,7 @@
                     >Log Out</a
                     >
                 </li>
-
-
                 {% endif %}
-
             </ul>
         </div>
     </div>
