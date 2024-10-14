@@ -1,0 +1,77 @@
+{% from "bootstrap5/form.html" import render_form %} {% block content %} {%
+include "header.html" %}
+<header
+        class="masthead"
+        style="background-image: url('../static/img/data-ingestion.jpg')"
+>
+    <div class="container position-relative px-4 px-lg-5">
+        <div class="row gx-4 gx-lg-5 justify-content-center">
+            <div class="col-md-10 col-lg-8 col-xl-7">
+                <div class="site-heading">
+                    <h2>StreamSets Self-Service Ingestion</h2>
+                    <span class="subheading">A collection of pre-defined ingestion patterns</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script type="text/javascript">
+        $(document).ready(function() {
+            // Function to hide/show fields based on selection
+            function toggleFields() {
+                var selection = $('#instance_name_suffix').val();
+                $('#suffix_parameter_name').hide();
+                $('#suffix_parameter_name').closest('.mb-3').hide();
+<!--                $('#suffix_parameter_name').prop('disabled', true);-->
+                if (selection === 'Parameter Value') {
+                    $('#suffix_parameter_name').show();
+                    $('#suffix_parameter_name').closest('.mb-3').show();
+<!--                    $('#suffix_parameter_name').prop('disabled', false);-->
+                }
+            }
+            // Call the function on page load and on selection change
+            toggleFields();
+            $('#instance_name_suffix').change(function() {
+                toggleFields();
+            });
+        });
+    </script>
+</header>
+<main class="mb-4">
+    <div class="container">
+        <div class="row">
+            {% with messages = get_flashed_messages() %}
+            {% if messages %}
+            {% for message in messages %}
+            <p class="flash">{{ message }}</p>
+            {% endfor %}
+            {% endif %}
+            {% endwith %}
+            <div class="col-lg-8 col-md-10 mx-auto">
+                <div style="text-align: left;">
+                <span class="badge rounded-pill" style="background-color: teal; color: white;">
+                    <h4>Step 4: Select a suffix for your job instance </h4>
+                </span>
+                </div>
+                <div class="mt-4">
+                    <form class="form" role="form" method="POST">
+                        {{ form.hidden_tag() }}
+                        <div class="mb-3 required">
+                            <label class="form-label" for="instance_name_suffix">{{ form.instance_name_suffix.label
+                                }}</label>
+                            {{ form.instance_name_suffix(class="form-select") }}
+                        </div>
+                        <div class="mb-3 required">
+                            <label class="form-label" for="suffix_parameter_name">{{ form.suffix_parameter_name.label
+                                }}</label>
+                            {{ form.suffix_parameter_name(class="form-select") }}
+                        </div>
+                        <input class="btn btn-primary btn-md" id="Submit Job" name="Submit Job" type="submit"
+                               value="Submit Job">
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+{% include "footer.html" %} {% endblock %}
