@@ -4,16 +4,7 @@ from wtforms.fields.choices import SelectField
 from wtforms.fields.form import FormField
 from wtforms.fields.list import FieldList
 from wtforms.validators import DataRequired, URL, Email
-from flask_ckeditor import CKEditorField
-
-
-# WTForm for creating a blog post
-class CreatePostForm(FlaskForm):
-    title = StringField("Blog Post Title", validators=[DataRequired()])
-    subtitle = StringField("Subtitle", validators=[DataRequired()])
-    img_url = StringField("Blog Image URL", validators=[DataRequired(), URL()])
-    body = CKEditorField("Blog Content", validators=[DataRequired()])
-    submit = SubmitField("Submit Post")
+from streamsets_manager import StreamSetsManager
 
 
 # RegisterForm to register new users
@@ -36,16 +27,32 @@ class TemplateForm(FlaskForm):
     destination = SelectField('Destination', choices=[('', 'Destination...')], validators=[DataRequired()])
     submit = SubmitField('Next: Runtime Configurations')
 
-# RuntimeConfigurationsForm to configure source configurations
-# RuntimeConfigurationsForm to configure target configurations
-class DynamicForm(FlaskForm):
-    pass  # We will dynamically add fields
-
-class SourceConfigurationForm(FlaskForm):
-    submit = SubmitField('Submit')
+# # RuntimeConfigurationsForm to configure source/target configurations
+# class DynamicForm(FlaskForm):
+#     pass  # We will dynamically add fields
 
 
-# CommentForm so users can leave comments below posts
-class CommentForm(FlaskForm):
-    comment_text = CKEditorField("Comment", validators=[DataRequired()])
-    submit = SubmitField("Submit Comment")
+class FormGenerator:
+    @staticmethod
+    def generate_form(string_fields_dict, job_template_id, submit_text):
+        class DynamicForm(FlaskForm):
+            pass
+
+        streamsets_manager = StreamSetsManager()
+        job_template_static_params = streamsets_manager.get_job_template_static_params(job_template_id)
+        # Dynamically add StringFields using dictionary keys as labels and values as default values
+        for label, default_value in string_fields_dict.items():
+            if label in job_template_static_params:
+                # disable static input fields
+                setattr(DynamicForm, label, StringField(label, render_kw={'disabled': 'disabled'}, default=default_value, validators=[DataRequired()]))
+            else:
+                setattr(DynamicForm, label, StringField(label, default=default_value, validators=[DataRequired()]))
+            setattr(DynamicForm, submit_text, SubmitField(submit_text))
+        return DynamicForm
+
+# Form to pick Job Instance Suffix
+class JobInstanceSuffixForm(FlaskForm):
+    instance_name_suffix = SelectField('Instance Name Suffix:', choices=[('default', 'Select a suffix')], validators=[DataRequired()])
+    suffix_parameter_name = SelectField('Parameter Name:', choices=[('default', 'Parameter...')], validators=[DataRequired()])
+    submit = SubmitField('Submit Job')
+
