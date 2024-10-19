@@ -1,19 +1,21 @@
 import ast
 import os
+import logging
+
 from flask import Flask, render_template, redirect, url_for, flash, request
 from flask_bootstrap import Bootstrap5
 from flask_ckeditor import CKEditor
 from flask_gravatar import Gravatar
 from flask_login import login_user, LoginManager, current_user, logout_user, login_required
 from flask_sqlalchemy import SQLAlchemy
-from flask_wtf import FlaskForm
 from werkzeug.security import generate_password_hash, check_password_hash
 from wtforms.fields.simple import StringField, SubmitField
 from wtforms.validators import DataRequired
-
 from db_manager import User, IngestionPattern, IngestionPatternJobTemplateRelationship, JobTemplate
 from forms import RegisterForm, LoginForm, TemplateForm, FormGenerator, JobInstanceSuffixForm
 from streamsets_manager import StreamSetsManager
+
+logger = logging.getLogger(__name__)
 
 
 class IngestHubConfig:
@@ -180,7 +182,7 @@ class IngestHubRoutes:
             source_configs = request.args.get('updated_source_configs')
             job_template = self.job_template_manager.get_job_template(source, destination)
             target_configs = job_template.destination_runtime_parameters
-            DynamicForm = self.form_generator.generate_form(target_configs,job_template.sch_job_template_id,submit_text="Submit Job")
+            DynamicForm = self.form_generator.generate_form(target_configs,job_template.sch_job_template_id,submit_text="Next")
             form = DynamicForm()
             if form.validate_on_submit():
                 updated_target_configs = {key: getattr(form, key).data for key in target_configs}
@@ -204,7 +206,7 @@ class IngestHubRoutes:
                 instance_name_suffix = form.instance_name_suffix.data
                 suffix_parameter_name = form.suffix_parameter_name.data
                 return redirect(
-                    url_for('submit_job', job_template_id=sch_job_template_id, source_configs=source_configs, target_configs=target_configs,
+                    url_for('submit_job', job_template_id=sch_job_template_id, runtime_parameters=suffix_parameters,
                             suffix_parameter_name=suffix_parameter_name, instance_name_suffix=instance_name_suffix, logged_in=current_user.is_authenticated))
 
             return render_template('job-suffix.html', form=form, logged_in=current_user.is_authenticated)
@@ -213,12 +215,21 @@ class IngestHubRoutes:
         @self.app.route('/submit-job', methods=['GET', 'POST'])
         @login_required
         def submit_job():
-            source_configs = ast.literal_eval(request.args.get('source_configs'))
-            target_configs = ast.literal_eval(request.args.get('target_configs'))
+            runtime_parameters = ast.literal_eval(request.args.get('runtime_parameters'))
             sch_job_template_id = request.args.get('job_template_id')
             instance_name_suffix = request.args.get('instance_name_suffix')
             suffix_parameter_name = request.args.get('suffix_parameter_name')
-            return f"source:{source_configs} | target:{target_configs} | template_id:{sch_job_template_id} | instance_name_suffix:{instance_name_suffix} | suffix_parameter_name:{suffix_parameter_name}"
+            streamsets_manager = StreamSetsManager()
+            jobs = streamsets_manager.start_job_template(sch_job_template_id, runtime_parameters, instance_name_suffix,
+                                                suffix_parameter_name)
+            job_template = streamsets_manager.get_job_template(sch_job_template_id)
+
+            streamsets_manager.get_metrics(user=current_user.name, job_template_instances=jobs,
+                                           job_template=job_template)
+            for job in jobs:
+                logger.info(f"Job:{job.job_name} started successfully by {current_user.name}")
+                return f"Job:{job.job_name} started successfully by {current_user.name}"
+
 
         @self.app.route('/logout')
         def logout():
@@ -265,6 +276,7 @@ if __name__ == "__main__":
     app_routes = IngestHubRoutes(ingest_hub.app, ingest_hub.db, form_generator, job_template_manager)
     # Start the app
     ingest_hub.run()
+
 
 
 
