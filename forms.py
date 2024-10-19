@@ -53,6 +53,6 @@ class FormGenerator:
 # Form to pick Job Instance Suffix
 class JobInstanceSuffixForm(FlaskForm):
     instance_name_suffix = SelectField('Instance Name Suffix:', choices=[('default', 'Select a suffix')], validators=[DataRequired()])
-    suffix_parameter_name = SelectField('Parameter Name:', choices=[('default', 'Parameter...')], validators=[DataRequired()])
+    suffix_parameter_name = SelectField('Parameter Name:', choices=[('', 'Parameter...')], validators=[DataRequired()])
     submit = SubmitField('Submit Job')
 
