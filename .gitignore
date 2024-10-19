@@ -3,6 +3,7 @@
 *.properties
 private/
 .DS_Store
+Procfile
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
