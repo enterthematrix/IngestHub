@@ -11,7 +11,7 @@ class Config:
     SQLALCHEMY_DATABASE_URI = 'sqlite:///streamsets.db'
 
 # Flask App Class
-class SchemaManager:
+class DatabaseManager:
     def __init__(self):
         self.app = Flask(__name__)
         self.app.config.from_object(Config)
@@ -25,6 +25,18 @@ class SchemaManager:
     def create_tables(self):
         with self.app.app_context():
             self.db.create_all()
+
+    def write_to_table(self, record):
+        with self.app.app_context():
+            self.db.session.add(record)
+            self.db.session.commit()
+
+    def query_table(self, table,key,value):
+        with self.app.app_context():
+            column = getattr(table, key)
+            return self.db.session.query(table).filter(column == value).first()
+
+
 
 # Base class for models
 class Base(DeclarativeBase):
@@ -75,10 +87,10 @@ class JobInstance(Base):
     __tablename__ = 'job_instance'
 
     job_instance_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    job_run_id: Mapped[str] = mapped_column(String, nullable=False)
+    job_id: Mapped[str] = mapped_column(String, nullable=False)
+    job_run_count: Mapped[int] = mapped_column(String, nullable=False)
     job_template_id: Mapped[int] = mapped_column(Integer, ForeignKey('job_template.job_template_id'), nullable=False)
     user_id: Mapped[str] = mapped_column(String, nullable=False)
-    user_run_id: Mapped[str] = mapped_column(String, nullable=False)
     engine_id: Mapped[str] = mapped_column(String, nullable=False)
     pipeline_id: Mapped[str] = mapped_column(String, nullable=False)
     successful_run: Mapped[bool] = mapped_column(Boolean, nullable=False)
@@ -89,6 +101,6 @@ class JobInstance(Base):
     start_time: Mapped[str] = mapped_column(TIMESTAMP)
     finish_time: Mapped[str] = mapped_column(TIMESTAMP)
 
-db_manager = SchemaManager()
+db_manager = DatabaseManager()
 db_manager.create_tables()
 
