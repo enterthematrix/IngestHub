@@ -28,7 +28,7 @@ VALUES     ('Kafka_To_ADLS',
              'KAFKA',
              'Snowflake',
              CURRENT_TIMESTAMP),
-            ('Local_To_Snowflake',
+            ('FS_To_Snowflake',
              'FS/NFS',
              'Snowflake',
              CURRENT_TIMESTAMP);
@@ -98,12 +98,12 @@ VALUES(
     }',
     CURRENT_TIMESTAMP),
     (
-    '7069ea68-ea14-40d3-9763-39d690c2da24:cd4694f6-2c60-11ec-988d-5b2e605d28aa',
+    '1acddc7e-06c2-4871-baae-3f55cec47be4:cd4694f6-2c60-11ec-988d-5b2e605d28aa',
     false,
     '{
 		"BatchSize": "5000",
 		"Dir": "/flight_data",
-		"Filename_Pattern": "*.bz2"
+		"Filename_Pattern": "sample_10k.csv.bz2"
 	}',
     '{
 		"SNOWFLAKE_TABLE_NAME": "FLIGHTS"
@@ -163,4 +163,4 @@ FROM   ingestion_pattern p,
 WHERE  p.source = 'FS/NFS'
        AND p.destination = 'Snowflake'
        AND t.sch_job_template_id =
-'7069ea68-ea14-40d3-9763-39d690c2da24:cd4694f6-2c60-11ec-988d-5b2e605d28aa';
+'1acddc7e-06c2-4871-baae-3f55cec47be4:cd4694f6-2c60-11ec-988d-5b2e605d28aa';
