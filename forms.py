@@ -1,11 +1,7 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField, PasswordField
 from wtforms.fields.choices import SelectField
-from wtforms.fields.form import FormField
-from wtforms.fields.list import FieldList
 from wtforms.validators import DataRequired, URL, Email
-from streamsets_manager import StreamSetsManager
-
 
 # RegisterForm to register new users
 class RegisterForm(FlaskForm):
@@ -27,17 +23,14 @@ class TemplateForm(FlaskForm):
     destination = SelectField('Destination', choices=[('', 'Destination...')], validators=[DataRequired()])
     submit = SubmitField('Next: Runtime Configurations')
 
-# # RuntimeConfigurationsForm to configure source/target configurations
-# class DynamicForm(FlaskForm):
-#     pass  # We will dynamically add fields
-
-
+# RuntimeConfigurationsForm to configure source/target configurations
 class FormGenerator:
     @staticmethod
     def generate_form(string_fields_dict, job_template_id, submit_text):
         class DynamicForm(FlaskForm):
             pass
-
+        # import statement here to resolve circular import error
+        from streamsets_manager import StreamSetsManager
         streamsets_manager = StreamSetsManager()
         job_template_static_params = streamsets_manager.get_job_template_static_params(job_template_id)
         # Dynamically add StringFields using dictionary keys as labels and values as default values
@@ -50,7 +43,7 @@ class FormGenerator:
             setattr(DynamicForm, submit_text, SubmitField(submit_text))
         return DynamicForm
 
-# Form to pick Job Instance Suffix
+# form to pick job instance suffix
 class JobInstanceSuffixForm(FlaskForm):
     instance_name_suffix = SelectField('Instance Name Suffix:', choices=[('default', 'Select a suffix')], validators=[DataRequired()])
     suffix_parameter_name = SelectField('Parameter Name:', choices=[('', 'Parameter...')], validators=[DataRequired()])

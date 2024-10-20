@@ -9,17 +9,44 @@ from flask_gravatar import Gravatar
 from flask_login import login_user, LoginManager, current_user, logout_user, login_required
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
-from wtforms.fields.simple import StringField, SubmitField
-from wtforms.validators import DataRequired
 from db_manager import User, IngestionPattern, IngestionPatternJobTemplateRelationship, JobTemplate
 from forms import RegisterForm, LoginForm, TemplateForm, FormGenerator, JobInstanceSuffixForm
-from streamsets_manager import StreamSetsManager
 
-logger = logging.getLogger(__name__)
+
+# logger = logging.getLogger(__name__)
+
+class Logger:
+    def __init__(self, log_file: str = 'ingest_hub.log', level=logging.DEBUG):
+        self.logger = logging.getLogger(__name__)
+        self.logger.setLevel(level)
+
+        if not self.logger.hasHandlers():
+            # console handler
+            console_handler = logging.StreamHandler()
+            console_handler.setLevel(level)
+
+            # file handler
+            file_handler = logging.FileHandler(log_file)
+            file_handler.setLevel(level)
+
+            # logging format
+            formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+            console_handler.setFormatter(formatter)
+            file_handler.setFormatter(formatter)
+
+            # add both handlers to the logger
+            self.logger.addHandler(console_handler)
+            self.logger.addHandler(file_handler)
+
+    def get_logger(self):
+        return self.logger
 
 
 class IngestHubConfig:
     def __init__(self):
+        # self.logger = Logger(self.__class__.__name__).get_logger()
+        self.logger = Logger().get_logger()
         self.app = Flask(__name__)
         self.configure_app()
         self.init_extensions()
@@ -55,6 +82,7 @@ class IngestHubConfig:
 # Authenticator class to handle user authentication
 class IngestHubAuthenticator:
     def __init__(self, app, db):
+        self.logger = Logger(self.__class__.__name__).get_logger()
         self.login_manager = LoginManager()
         self.login_manager.init_app(app)
         self.db = db
@@ -69,6 +97,7 @@ class IngestHubAuthenticator:
 # Routes class to handle all routing and app logic
 class IngestHubRoutes:
     def __init__(self, app, db, form_generator, job_template_manager):
+        self.logger = Logger(self.__class__.__name__).get_logger()
         self.app = app
         self.db = db
         self.form_generator = form_generator
@@ -219,6 +248,8 @@ class IngestHubRoutes:
             sch_job_template_id = request.args.get('job_template_id')
             instance_name_suffix = request.args.get('instance_name_suffix')
             suffix_parameter_name = request.args.get('suffix_parameter_name')
+            # import statement here to resolve circular import error
+            from streamsets_manager import StreamSetsManager
             streamsets_manager = StreamSetsManager()
             jobs = streamsets_manager.start_job_template(sch_job_template_id, runtime_parameters, instance_name_suffix,
                                                 suffix_parameter_name)
@@ -227,7 +258,7 @@ class IngestHubRoutes:
             streamsets_manager.get_metrics(user=current_user.name, job_template_instances=jobs,
                                            job_template=job_template)
             for job in jobs:
-                logger.info(f"Job:{job.job_name} started successfully by {current_user.name}")
+                self.logger.info(f"Job:{job.job_name} started successfully by {current_user.name}")
                 return f"Job:{job.job_name} started successfully by {current_user.name}"
 
 
@@ -240,6 +271,7 @@ class IngestHubRoutes:
 # Job template manager to access job template information
 class JobTemplateManager:
     def __init__(self, db):
+        self.logger = Logger(self.__class__.__name__).get_logger()
         self.db = db
 
     def get_job_template(self, source, destination):
