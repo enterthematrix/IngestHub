@@ -12,3 +12,5 @@ email_validator
 Flask-Gravatar
 gunicorn==21.2.0
 psycopg2-binary==2.9.9
+pyfiglet==1.0.2
+colorama==0.4.6
