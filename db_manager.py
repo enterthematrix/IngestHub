@@ -5,10 +5,12 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy import Integer, String, TIMESTAMP, Boolean, ForeignKey, JSON
 
+
 # Database and Flask Configuration as a separate class
 class Config:
     SECRET_KEY = os.environ.get('FLASK_KEY')
     SQLALCHEMY_DATABASE_URI = 'sqlite:///streamsets.db'
+
 
 # Flask App Class
 class DatabaseManager:
@@ -42,12 +44,13 @@ class DatabaseManager:
 
     def row_count(self, table):
         with self.app.app_context():
-            return  self.db.session.query(table).count()
+            return self.db.session.query(table).count()
 
 
 # Base class for models
 class Base(DeclarativeBase):
     pass
+
 
 # Define table schema classes
 
@@ -86,7 +89,8 @@ class IngestionPatternJobTemplateRelationship(Base):
     __tablename__ = 'ingestion_pattern_job_template_relationship'
 
     rel_id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    ingestion_pattern_id: Mapped[int] = mapped_column(Integer, ForeignKey('ingestion_pattern.ingestion_pattern_id'), nullable=False)
+    ingestion_pattern_id: Mapped[int] = mapped_column(Integer, ForeignKey('ingestion_pattern.ingestion_pattern_id'),
+                                                      nullable=False)
     job_template_id: Mapped[int] = mapped_column(Integer, ForeignKey('job_template.job_template_id'), nullable=False)
 
 
@@ -108,6 +112,6 @@ class JobInstance(Base):
     start_time: Mapped[str] = mapped_column(TIMESTAMP)
     finish_time: Mapped[str] = mapped_column(TIMESTAMP)
 
+
 db_manager = DatabaseManager()
 db_manager.create_tables()
-
