@@ -3,6 +3,9 @@ from wtforms import StringField, SubmitField, PasswordField
 from wtforms.fields.choices import SelectField
 from wtforms.validators import DataRequired, URL, Email
 
+from db_manager import DatabaseManager
+
+
 # RegisterForm to register new users
 class RegisterForm(FlaskForm):
     name = StringField("Name", validators=[DataRequired()])
@@ -31,7 +34,7 @@ class FormGenerator:
             pass
         # import statement here to resolve circular import error
         from streamsets_manager import StreamSetsManager
-        streamsets_manager = StreamSetsManager()
+        streamsets_manager = StreamSetsManager(DatabaseManager())
         job_template_static_params = streamsets_manager.get_job_template_static_params(job_template_id)
         # Dynamically add StringFields using dictionary keys as labels and values as default values
         for label, default_value in string_fields_dict.items():
