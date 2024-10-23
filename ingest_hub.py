@@ -1,7 +1,10 @@
 import ast
+import math
 import os
 import logging
 
+import pyfiglet
+from colorama import Fore, Style
 from flask import Flask, render_template, redirect, url_for, flash, request
 from flask_bootstrap import Bootstrap5
 from flask_ckeditor import CKEditor
@@ -9,14 +12,15 @@ from flask_gravatar import Gravatar
 from flask_login import login_user, LoginManager, current_user, logout_user, login_required
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
-from db_manager import User, IngestionPattern, IngestionPatternJobTemplateRelationship, JobTemplate
+from db_manager import User, IngestionPattern, IngestionPatternJobTemplateRelationship, JobTemplate, DatabaseManager, \
+    JobInstance
 from forms import RegisterForm, LoginForm, TemplateForm, FormGenerator, JobInstanceSuffixForm
 
-
-# logger = logging.getLogger(__name__)
+LOG_FILE = 'ingest_hub.log'
+JOBS_PER_PAGE = 20
 
 class Logger:
-    def __init__(self, log_file: str = 'ingest_hub.log', level=logging.DEBUG):
+    def __init__(self, log_file: str = LOG_FILE, level=logging.DEBUG):
         self.logger = logging.getLogger(__name__)
         self.logger.setLevel(level)
 
@@ -42,14 +46,28 @@ class Logger:
     def get_logger(self):
         return self.logger
 
+    def log_msg(self,level,msg):
+        match level:
+            case 'info':
+                self.logger.setLevel(logging.INFO)
+                self.logger.info(f"{Fore.GREEN}{msg}{Style.RESET_ALL}")
+            case 'warning':
+                self.logger.setLevel(logging.WARNING)
+                self.logger.warning(f"{Fore.YELLOW}{msg}{Style.RESET_ALL}")
+            case 'error':
+                self.logger.setLevel(logging.ERROR)
+                self.logger.error(f"{Fore.RED}{msg}{Style.RESET_ALL}")
+
 
 class IngestHubConfig:
     def __init__(self):
-        # self.logger = Logger(self.__class__.__name__).get_logger()
         self.logger = Logger().get_logger()
         self.app = Flask(__name__)
+        self.db_manager = DatabaseManager()
         self.configure_app()
         self.init_extensions()
+        print(pyfiglet.Figlet(font='big', width=80).renderText('IngestHub'))
+
 
     def configure_app(self):
         # Configure secret key and database URI
@@ -72,8 +90,9 @@ class IngestHubConfig:
         self.db = SQLAlchemy(self.app)
 
     def create_tables(self):
-        with self.app.app_context():
-            self.db.create_all()
+        self.db_manager.create_tables()
+        # with self.app.app_context():
+        #     self.db.create_all()
 
     def run(self):
         self.app.run(debug=True, port=5003)
@@ -81,25 +100,30 @@ class IngestHubConfig:
 
 # Authenticator class to handle user authentication
 class IngestHubAuthenticator:
-    def __init__(self, app, db):
+    def __init__(self, app, db, db_manager):
         self.logger = Logger(self.__class__.__name__).get_logger()
         self.login_manager = LoginManager()
         self.login_manager.init_app(app)
         self.db = db
+        # Customer DB manager
+        self.db_manager = DatabaseManager()
         self.configure_user_loader()
 
     def configure_user_loader(self):
         @self.login_manager.user_loader
         def load_user(user_id):
+            # return User.query.get_or_404(user_id)
             return self.db.get_or_404(User, user_id)
 
 
 # Routes class to handle all routing and app logic
 class IngestHubRoutes:
-    def __init__(self, app, db, form_generator, job_template_manager):
-        self.logger = Logger(self.__class__.__name__).get_logger()
+    def __init__(self, app, db, db_manager, form_generator, job_template_manager):
+        self.logger = Logger(self.__class__.__name__)
         self.app = app
         self.db = db
+        # customer db manager
+        self.db_manager = DatabaseManager()
         self.form_generator = form_generator
         self.job_template_manager = job_template_manager
         self.setup_routes()
@@ -194,8 +218,8 @@ class IngestHubRoutes:
             destination = request.args.get('destination')
             job_template = self.job_template_manager.get_job_template(source, destination)
             source_configs = job_template.source_runtime_parameters
-            DynamicForm = self.form_generator.generate_form(source_configs,job_template.sch_job_template_id,submit_text="Next")
-            form = DynamicForm()
+            dynamic_form = self.form_generator.generate_form(source_configs,job_template.sch_job_template_id,submit_text="Next")
+            form = dynamic_form()
             if form.validate_on_submit():
                 updated_source_configs = {key: getattr(form, key).data for key in source_configs}
                 return redirect(url_for('target_runtime_parameters', source=source, destination=destination,
@@ -211,8 +235,8 @@ class IngestHubRoutes:
             source_configs = request.args.get('updated_source_configs')
             job_template = self.job_template_manager.get_job_template(source, destination)
             target_configs = job_template.destination_runtime_parameters
-            DynamicForm = self.form_generator.generate_form(target_configs,job_template.sch_job_template_id,submit_text="Next")
-            form = DynamicForm()
+            dynamic_form = self.form_generator.generate_form(target_configs,job_template.sch_job_template_id,submit_text="Next")
+            form = dynamic_form()
             if form.validate_on_submit():
                 updated_target_configs = {key: getattr(form, key).data for key in target_configs}
                 return redirect(url_for('job_suffix', job_template_id=job_template.sch_job_template_id, source_configs=source_configs, target_configs=updated_target_configs,
@@ -250,16 +274,44 @@ class IngestHubRoutes:
             suffix_parameter_name = request.args.get('suffix_parameter_name')
             # import statement here to resolve circular import error
             from streamsets_manager import StreamSetsManager
-            streamsets_manager = StreamSetsManager()
+            streamsets_manager = StreamSetsManager(self.db_manager)
             jobs = streamsets_manager.start_job_template(sch_job_template_id, runtime_parameters, instance_name_suffix,
                                                 suffix_parameter_name)
             job_template = streamsets_manager.get_job_template(sch_job_template_id)
-
-            streamsets_manager.get_metrics(user=current_user.name, job_template_instances=jobs,
+            user = current_user.name
+            with self.db_manager.app.app_context():
+                streamsets_manager.get_metrics(user=user, job_template_instances=jobs,
                                            job_template=job_template)
+
             for job in jobs:
-                self.logger.info(f"Job:{job.job_name} started successfully by {current_user.name}")
-                return f"Job:{job.job_name} started successfully by {current_user.name}"
+                self.logger.log_msg('info',f"Job:[{job.job_name}] started successfully by [{current_user.name}]")
+                return redirect(url_for('recent_jobs',logged_in=current_user.is_authenticated))
+                # return f"Job:[{job.job_name}] started successfully by [{current_user.name}]"
+
+        @self.app.route('/jobs', methods=['GET', 'POST'])
+        @login_required
+        def recent_jobs():
+            jobs_per_page = JOBS_PER_PAGE
+            page = request.args.get('page', 1, type=int)
+
+            total_rows = self.db_manager.row_count(table=JobInstance)
+            total_pages = math.ceil(total_rows / jobs_per_page)
+
+            # Fetch only the rows for the current page
+            with self.db_manager.app.app_context():
+                jobs = self.db_manager.query_table(JobInstance).offset((page - 1) * jobs_per_page).limit(jobs_per_page).all()
+
+            # Create a pagination object
+            pagination = {
+                'page': page,
+                'total_pages': total_pages,
+                'has_prev': page > 1,
+                'has_next': page < total_pages,
+                'prev_num': page - 1 if page > 1 else None,
+                'next_num': page + 1 if page < total_pages else None,
+            }
+            print((jobs))
+            return render_template('jobs.html', jobs=jobs, pagination=pagination, total_pages=total_pages, logged_in=current_user.is_authenticated)
 
 
         @self.app.route('/logout')
@@ -299,16 +351,12 @@ if __name__ == "__main__":
     # Make sure tables are created
     ingest_hub.create_tables()
     # Configure authentication
-    authenticator = IngestHubAuthenticator(ingest_hub.app, ingest_hub.db)
+    authenticator = IngestHubAuthenticator(ingest_hub.app, ingest_hub.db, ingest_hub.db_manager)
     # Instance for form generation
     form_generator = FormGenerator()
     # Instance for managing job templates
     job_template_manager = JobTemplateManager(ingest_hub.db)
     # Set up app routes
-    app_routes = IngestHubRoutes(ingest_hub.app, ingest_hub.db, form_generator, job_template_manager)
+    app_routes = IngestHubRoutes(ingest_hub.app, ingest_hub.db, ingest_hub.db_manager, form_generator, job_template_manager)
     # Start the app
     ingest_hub.run()
-
-
-
-
