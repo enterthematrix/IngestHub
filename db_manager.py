@@ -31,11 +31,18 @@ class DatabaseManager:
             self.db.session.add(record)
             self.db.session.commit()
 
-    def query_table(self, table,key,value):
+    def query_table(self, table, **kwargs):
         with self.app.app_context():
-            column = getattr(table, key)
-            return self.db.session.query(table).filter(column == value).first()
+            result = self.db.session.query(table)
+            # Apply filters for each key-value pair in kwargs
+            for key, value in kwargs.items():
+                column = getattr(table, key)
+                result = result.filter(column == value)
+            return result
 
+    def row_count(self, table):
+        with self.app.app_context():
+            return  self.db.session.query(table).count()
 
 
 # Base class for models

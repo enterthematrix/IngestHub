@@ -4,30 +4,29 @@ from time import time, sleep
 from threading import Thread
 
 from streamsets.sdk import ControlHub
-from db_manager import JobInstance, DatabaseManager, JobTemplate
+from db_manager import JobInstance, JobTemplate
 from ingest_hub import Logger
 
-# logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-# logger = logging.getLogger(__name__)
 
 # job status check frequency
-job_status_check_interval_secs = 10
-
+JOB_STATUS_CHECK_INTERVAL_SECS = 10
 # max wait time for job completion
-max_wait_time_for_job_secs = 4 * 60 * 60  # 4 hours
+MAX_WAIT_TIME_FOR_JOB_SECS = 4 * 60 * 60  # 4 hours
+# ControlHub Credentials file
+CREDENTIALS_PROPERTIES = 'private/credentials.properties'
 
 class StreamSetsManager:
-    def __init__(self):
-        # self.logger = Logger(self.__class__.__name__).get_logger()
-        self.logger = Logger().get_logger()
+    def __init__(self,db_manager):
+        self.logger = Logger()
         self.config = configparser.ConfigParser()
         self.config.optionxform = lambda option: option
         self._load_credentials()
+        self.db_manager = db_manager
         self.sch = ControlHub(credential_id=self.cred_id, token=self.cred_token)
 
 
     def _load_credentials(self):
-        self.config.read('private/credentials.properties')
+        self.config.read(CREDENTIALS_PROPERTIES)
         self.cred_id = self.config.get("SECURITY", "CRED_ID")
         self.cred_token = self.config.get("SECURITY", "CRED_TOKEN")
 
@@ -45,10 +44,9 @@ class StreamSetsManager:
         try:
             # Find the Job Template
             job_template = self.get_job_template(sch_job_template_id)
-
-            self.logger.info('Using Job template \'{}\''.format(job_template.job_name))
+            self.logger.log_msg('info', 'Using Job template \'{}\''.format(job_template.job_name))
         except Exception as e:
-            self.logger.error('Error: Job Template with ID \'' + sch_job_template_id + '\' not found.' + str(e))
+            self.logger.log_msg('error', 'Error: Job Template with ID \'' + sch_job_template_id + '\' not found.' + str(e))
             raise
 
         suffix_map = {
@@ -65,9 +63,7 @@ class StreamSetsManager:
         )
 
     # Get metrics for all Job Template Instances once they complete
-    def get_metrics(self,user, job_template_instances,job_template):
-        # for job in job_template_instances:
-        #     return f"Job:{job.job_name} started successfully by {current_user.name}"
+    def get_metrics(self, user, job_template_instances,job_template):
         for job in job_template_instances:
             # Track each Job Template Instance in a separate thread to avoid blocking
             thread = Thread(target=self.wait_for_job_completion_and_get_metrics, args=(user, job_template, job))
@@ -75,18 +71,20 @@ class StreamSetsManager:
 
     # Waits for Job to complete before getting its metrics
     def wait_for_job_completion_and_get_metrics(self, user, job_template, job):
-        start_seconds = time()
-        elapsed_seconds = 0
-        while elapsed_seconds < max_wait_time_for_job_secs:
-            elapsed_seconds = time() - start_seconds
-            job.refresh()
-            if job.status.status == 'INACTIVE' or job.status.status == 'INACTIVE_ERROR':
-                break
-            sleep(job_status_check_interval_secs)
-            self.logger.info(f"Waiting for job:{job.job_name} to finish")
+        with self.db_manager.app.app_context():
+            start_seconds = time()
+            elapsed_seconds = 0
+            while elapsed_seconds < MAX_WAIT_TIME_FOR_JOB_SECS:
+                elapsed_seconds = time() - start_seconds
+                job.refresh()
+                if job.status.status == 'INACTIVE' or job.status.status == 'INACTIVE_ERROR':
+                    break
+                sleep(JOB_STATUS_CHECK_INTERVAL_SECS)
+                self.logger.log_msg('info', f"Waiting for job:[{job.job_name}] to finish")
 
-        self.logger.info(f"Job:{job.job_name} finish running. Collecting metrics...")
-        self.write_metrics_for_job(user, job_template, job)
+            self.logger.log_msg('info', f"Job:[{job.job_name}'] finished running. Collecting metrics...")
+            self.write_metrics_for_job(user, job_template, job)
+
 
     def write_metrics_for_job(self, user, job_template, job):
         job_metric = JobInstance()
@@ -94,10 +92,7 @@ class StreamSetsManager:
         metrics = job.metrics[0]
         history = job.history[0]
 
-        db = DatabaseManager()
-        # get 'job_template.job_template_id' to be used as FK in 'job_instance' table
-        job_template = db.query_table(table=JobTemplate, key='sch_job_template_id',
-                                      value=job_template.job_id)
+        job_template = self.db_manager.query_table(JobTemplate, sch_job_template_id=job_template.job_id).first()
 
         # If job status color is RED, mark successful_run as False
         if job.status.status == 'INACTIVE' and history.color == 'GRAY':
@@ -121,8 +116,8 @@ class StreamSetsManager:
         job_metric.error_record_count = metrics.total_error_count
         job_metric.start_time = datetime.fromtimestamp(history.start_time / 1000.0)
         job_metric.finish_time = datetime.fromtimestamp(history.finish_time / 1000.0)
-        self.logger.info(f"Writing job metrics to the database...")
-        db.write_to_table(job_metric)
-        self.logger.info(f"Done writing job metrics to the database")
+        self.logger.log_msg('info', f"Writing job metrics to the database...")
+        self.db_manager.write_to_table(job_metric)
+        self.logger.log_msg('info', f"Done writing job metrics to the database")
 
 
