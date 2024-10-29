@@ -20,16 +20,15 @@ include "header.html" %}
 
 <main class="mb-4">
     <div class="container">
-        <div class="row">
+        <div class="text-center my-3">
             {% with messages = get_flashed_messages(with_categories=True) %}
             {% if messages %}
-            {% for message in messages %}
+            {% for category,message in messages %}
             <p class="flash-{{ category }}">{{ message }}</p>
             {% endfor %}
             {% endif %}
             {% endwith %}
             <div class="col-lg-8 col-md-10 mx-auto">
-                <!--TODO: render template form here-->
                 <div style="text-align: left;">
                 <span class="badge rounded-pill" style="background-color: teal; color: white;">
                     <h4>Step 1: Pick the source and target systems</h4>

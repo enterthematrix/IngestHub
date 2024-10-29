@@ -18,11 +18,11 @@
 
 <main class="mb-4">
     <div class="container">
-        <div class="row">
-            {% with messages = get_flashed_messages() %}
+        <div class="text-center my-3">
+            {% with messages = get_flashed_messages(with_categories=True) %}
             {% if messages %}
-            {% for message in messages %}
-            <p class="flash">{{ message }}</p>
+            {% for category,message in messages %}
+            <p class="flash-{{ category }}">{{ message }}</p>
             {% endfor %}
             {% endif %}
             {% endwith %}
@@ -38,6 +38,8 @@
                         <thead>
                         <tr>
                             <th>JOB ID</th>
+                            <th>START TIME</th>
+                            <th>FINISH TIME</th>
                             <th>SUCCESS</th>
                             <th>INPUT RECORDS</th>
                             <th>OUTPUT RECORDS</th>
@@ -49,6 +51,8 @@
                         {% for job in jobs %}
                         <tr>
                             <td>{{ job.job_id }}</td>
+                            <td>{{ job.start_time }}</td>
+                            <td>{{ job.finish_time }}</td>
                             <td>{{ job.successful_run }}</td>
                             <td>{{ job.input_record_count }}</td>
                             <td>{{ job.output_record_count }}</td>
