@@ -28,20 +28,21 @@ include "header.html" %}
             {% endfor %}
             {% endif %}
             {% endwith %}
-            <div class="col-lg-8 col-md-10 mx-auto">
-                <div style="text-align: left;">
+        </div>
+        <div class="col-lg-8 col-md-10 mx-auto">
+            <div style="text-align: left;">
                 <span class="badge rounded-pill" style="background-color: teal; color: white;">
                     <h4>Step 3: Destination configurations </h4>
                 </span>
-                </div>
-                <div class="mt-4">
-                    {{ render_form(form, novalidate=True) }}
-                </div>
-                <div class="disclaimer">
-            <p><h6>Note: The static parameters will be shown as greyed out and can not be overridden.</h6></p>
-        </div>
+            </div>
+            <div class="mt-4">
+                {{ render_form(form, novalidate=True) }}
+            </div>
+            <div class="disclaimer">
+                <p><h6>Note: The static parameters will be shown as greyed out and can not be overridden.</h6></p>
             </div>
         </div>
     </div>
+
 </main>
 {% include "footer.html" %} {% endblock %}

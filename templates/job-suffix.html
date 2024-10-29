@@ -47,31 +47,32 @@ include "header.html" %}
             {% endfor %}
             {% endif %}
             {% endwith %}
-            <div class="col-lg-8 col-md-10 mx-auto">
-                <div style="text-align: left;">
+        </div>
+        <div class="col-lg-8 col-md-10 mx-auto">
+            <div style="text-align: left;">
                 <span class="badge rounded-pill" style="background-color: teal; color: white;">
                     <h4>Step 4: Select a suffix for the job instance </h4>
                 </span>
-                </div>
-                <div class="mt-4">
-                    <form class="form" role="form" method="POST">
-                        {{ form.hidden_tag() }}
-                        <div class="mb-3 required">
-                            <label class="form-label" for="instance_name_suffix">{{ form.instance_name_suffix.label
-                                }}</label>
-                            {{ form.instance_name_suffix(class="form-select") }}
-                        </div>
-                        <div class="mb-3 required">
-                            <label class="form-label" for="suffix_parameter_name">{{ form.suffix_parameter_name.label
-                                }}</label>
-                            {{ form.suffix_parameter_name(class="form-select") }}
-                        </div>
-                        <input class="btn btn-primary btn-md" id="Submit Job" name="Submit Job" type="submit"
-                               value="Submit Job">
-                    </form>
-                </div>
+            </div>
+            <div class="mt-4">
+                <form class="form" role="form" method="POST">
+                    {{ form.hidden_tag() }}
+                    <div class="mb-3 required">
+                        <label class="form-label" for="instance_name_suffix">{{ form.instance_name_suffix.label
+                            }}</label>
+                        {{ form.instance_name_suffix(class="form-select") }}
+                    </div>
+                    <div class="mb-3 required">
+                        <label class="form-label" for="suffix_parameter_name">{{ form.suffix_parameter_name.label
+                            }}</label>
+                        {{ form.suffix_parameter_name(class="form-select") }}
+                    </div>
+                    <input class="btn btn-primary btn-md" id="Submit Job" name="Submit Job" type="submit"
+                           value="Submit Job">
+                </form>
             </div>
         </div>
     </div>
+
 </main>
 {% include "footer.html" %} {% endblock %}
