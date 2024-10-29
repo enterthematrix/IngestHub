@@ -13,7 +13,7 @@ from flask_login import login_user, LoginManager, current_user, logout_user, log
 from sqlalchemy import desc
 from werkzeug.security import generate_password_hash, check_password_hash
 from db_manager import User, IngestionPattern, IngestionPatternJobTemplateRelationship, JobTemplate, DatabaseManager, \
-    JobInstance, db_manager
+    JobInstance
 from forms import RegisterForm, LoginForm, TemplateForm, FormGenerator, JobInstanceSuffixForm
 
 

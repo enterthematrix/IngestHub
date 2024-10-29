@@ -116,5 +116,5 @@ class JobInstance(Base):
     finish_time: Mapped[str] = mapped_column(TIMESTAMP)
 
 
-db_manager = DatabaseManager()
-db_manager.create_tables()
+# db_manager = DatabaseManager()
+# db_manager.create_tables()
