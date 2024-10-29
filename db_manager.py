@@ -47,6 +47,9 @@ class DatabaseManager:
             return self.db.session.query(table).count()
 
 
+
+
+
 # Base class for models
 class Base(DeclarativeBase):
     pass
