@@ -49,7 +49,9 @@ class IngestHubConfig:
 
     def initialize_db(self):
         try:
-            self.db_manager.create_tables()
+            # self.db_manager.create_tables()
+            with self.app.app_context():
+                self.db_manager.db.create_all()
             if self.db_manager.check_tables_empty([User, IngestionPattern, JobTemplate,
                                                    IngestionPatternJobTemplateRelationship, JobInstance]):
                 self.logger.log_msg("info", f"Initializing the database with example job templates...")
