@@ -386,6 +386,7 @@ if __name__ == "__main__":
     # initialize DB manager
     db_manager = DatabaseManager()
     ingest_hub = IngestHubConfig()
+    app = ingest_hub.app
     # Make sure tables are created
     ingest_hub.initialize_db()
     # Configure authentication
