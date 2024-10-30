@@ -138,6 +138,3 @@ class JobInstance(Base):
     error_message: Mapped[str] = mapped_column(String)
     start_time: Mapped[str] = mapped_column(TIMESTAMP)
     finish_time: Mapped[str] = mapped_column(TIMESTAMP)
-
-# db_manager = DatabaseManager()
-# db_manager.create_tables()
