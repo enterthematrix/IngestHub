@@ -6,15 +6,14 @@ from threading import Thread
 
 from streamsets.sdk import ControlHub
 from db_manager import JobInstance, JobTemplate
-from ingest_hub import Logger
+from ingesthub_logger import Logger
 
 # job status check frequency
 JOB_STATUS_CHECK_INTERVAL_SECS = 10
 # max wait time for job completion
 MAX_WAIT_TIME_FOR_JOB_SECS = 4 * 60 * 60  # 4 hours
 # ControlHub Credentials file
-CREDENTIALS_PROPERTIES = 'private/ccredentials.properties'
-
+CREDENTIALS_PROPERTIES = 'private/credentials.properties'
 
 class StreamSetsManager:
     def __init__(self, db_manager):
@@ -61,7 +60,6 @@ class StreamSetsManager:
                     raise
         else:
             raise ValueError("CREDENTIALS_PROPERTIES is not set or credential file is missing.")
-
 
     def get_job_template_static_params(self, job_template_id):
         try:
