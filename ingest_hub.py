@@ -15,7 +15,7 @@ from db_manager import User, IngestionPattern, IngestionPatternJobTemplateRelati
 from forms import RegisterForm, LoginForm, TemplateForm, FormGenerator, JobInstanceSuffixForm
 from ingesthub_logger import Logger
 
-JOBS_PER_PAGE = 20
+JOBS_PER_PAGE = 6
 
 
 class IngestHubConfig:
