@@ -1,10 +1,8 @@
 import ast
 import math
 import os
-import logging
 
 import pyfiglet
-from colorama import Fore, Style
 from flask import Flask, render_template, redirect, url_for, flash, request
 from flask_bootstrap import Bootstrap5
 from flask_ckeditor import CKEditor
@@ -15,64 +13,14 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from db_manager import User, IngestionPattern, IngestionPatternJobTemplateRelationship, JobTemplate, DatabaseManager, \
     JobInstance
 from forms import RegisterForm, LoginForm, TemplateForm, FormGenerator, JobInstanceSuffixForm
+from ingesthub_logger import Logger
 
-
-LOG_FILE = 'ingest_hub.log'
 JOBS_PER_PAGE = 20
-
-class Logger:
-    def __init__(self, log_file: str = LOG_FILE, level=logging.DEBUG):
-        self.logger = logging.getLogger(__name__)
-        self.logger.setLevel(level)
-
-        if not self.logger.hasHandlers():
-            try:
-                # Console handler
-                console_handler = logging.StreamHandler()
-                console_handler.setLevel(level)
-
-                # File handler
-                file_handler = logging.FileHandler(log_file)
-                file_handler.setLevel(level)
-
-                # Logging format
-                formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-
-                console_handler.setFormatter(formatter)
-                file_handler.setFormatter(formatter)
-
-                # Add both handlers to the logger
-                self.logger.addHandler(console_handler)
-                self.logger.addHandler(file_handler)
-
-            except (OSError, Exception) as e:
-                self.logger.error(f"Error initializing logging handlers: {e}")
-
-    def get_logger(self):
-        return self.logger
-
-    def log_msg(self, level, msg):
-        try:
-            match level:
-                case 'info':
-                    self.logger.setLevel(logging.INFO)
-                    self.logger.info(f"{Fore.GREEN}{msg}{Style.RESET_ALL}")
-                case 'warning':
-                    self.logger.setLevel(logging.WARNING)
-                    self.logger.warning(f"{Fore.YELLOW}{msg}{Style.RESET_ALL}")
-                case 'error':
-                    self.logger.setLevel(logging.ERROR)
-                    self.logger.error(f"{Fore.RED}{msg}{Style.RESET_ALL}")
-                case _:
-                    self.logger.warning("Invalid log level specified; defaulting to warning.")
-                    self.logger.warning(msg)
-        except Exception as e:
-            self.logger.error(f"Error logging message: {e}")
 
 
 class IngestHubConfig:
     def __init__(self):
-        self.logger = Logger().get_logger()
+        self.logger = Logger(self.__class__.__name__)
         self.app = Flask(__name__)
         self.db_manager = db_manager
         self.configure_app()
@@ -99,8 +47,18 @@ class IngestHubConfig:
         # Initialize DB after configuring the app
         db_manager.db.init_app(self.app)
 
-    def create_tables(self):
-        self.db_manager.create_tables()
+    def initialize_db(self):
+        try:
+            self.db_manager.create_tables()
+            if self.db_manager.check_tables_empty([User, IngestionPattern, JobTemplate,
+                                                   IngestionPatternJobTemplateRelationship, JobInstance]):
+                self.logger.log_msg("info", f"Initializing the database with example job templates...")
+                self.db_manager.load_templates()
+            else:
+                self.logger.log_msg("info", "Example template data already loaded, skipping loading of templates data")
+        except Exception as e:
+            self.logger.log_msg("error", f"Error in database initialization: {e}")
+            self.db_manager.db.session.rollback()
 
     def run(self):
         self.app.run(debug=True, port=5003)
@@ -145,11 +103,11 @@ class IngestHubRoutes:
                 if current_user.is_authenticated:
                     return render_template("index.html", logged_in=current_user.is_authenticated)
                 else:
-                    flash("Please login.","info")
+                    flash("Please login.", "info")
                     return redirect(url_for('login'))
             except Exception as e:
                 self.logger.log_msg("error", f"Error in about route: {e}")
-                flash("An error occurred.","error")
+                flash("An error occurred.", "error")
                 return redirect(url_for('login'))
 
         @self.app.route('/register', methods=["POST", "GET"])
@@ -172,7 +130,7 @@ class IngestHubRoutes:
                     )
                     user = result.scalar()
                     if user:
-                        flash("A user already exists with this email","warning")
+                        flash("A user already exists with this email", "warning")
                         return redirect(url_for('register'))
                     else:
                         self.db_manager.db.session.add(new_user)
@@ -181,12 +139,9 @@ class IngestHubRoutes:
                         return redirect(url_for("login"))
                 except Exception as e:
                     self.logger.log_msg("error", f"Error in register route: {e}")
-                    flash("An error occurred during registration.","error")
+                    flash("An error occurred during registration.", "error")
                     self.db_manager.db.session.rollback()
             return render_template("register.html", form=register_form)
-
-
-
 
         @self.app.route('/login', methods=["POST", "GET"])
         def login():
@@ -201,17 +156,17 @@ class IngestHubRoutes:
                     user = result.scalar()
 
                     if not user:
-                        flash("This username does not exist, please try again.","warning")
+                        flash("This username does not exist, please try again.", "warning")
                         return redirect(url_for('login'))
                     elif not check_password_hash(user.password, password):
-                        flash('Password incorrect, please try again.',"warning")
+                        flash('Password incorrect, please try again.', "warning")
                         return redirect(url_for('login'))
                     else:
                         login_user(user)
                         return redirect(url_for("load_templates"))
                 except Exception as e:
                     self.logger.log_msg("error", f"Error in login route: {e}")
-                    flash(f"Error in login route: {e}","error")
+                    flash(f"Error in login route: {e}", "error")
             return render_template("login.html", form=login_form)
 
         @self.app.route('/templates', methods=['GET', 'POST'])
@@ -240,7 +195,7 @@ class IngestHubRoutes:
                 return render_template('templates.html', form=form, logged_in=current_user.is_authenticated)
             except Exception as e:
                 self.logger.log_msg("error", f"Error in load_templates route: {e}")
-                flash(f"Error in load_templates route: {e}","error")
+                flash(f"Error in load_templates route: {e}", "error")
                 return redirect(url_for('about'))
 
         @self.app.route('/source', methods=['GET', 'POST'])
@@ -262,7 +217,7 @@ class IngestHubRoutes:
                 return render_template('source.html', form=form, logged_in=current_user.is_authenticated)
             except Exception as e:
                 self.logger.log_msg("error", f"Error in source_runtime_parameters route: {e}")
-                flash(f"Error in source_runtime_parameters route: {e}","error")
+                flash(f"Error in source_runtime_parameters route: {e}", "error")
                 return redirect(url_for('load_templates'))
 
         @self.app.route('/target', methods=['GET', 'POST'])
@@ -285,7 +240,7 @@ class IngestHubRoutes:
                 return render_template('target.html', form=form, logged_in=current_user.is_authenticated)
             except Exception as e:
                 self.logger.log_msg("error", f"Error in target_runtime_parameters route: {e}")
-                flash(f"Error in target_runtime_parameters route: {e}","error")
+                flash(f"Error in target_runtime_parameters route: {e}", "error")
                 return redirect(url_for('load_templates'))
 
         @self.app.route('/job-suffix', methods=['GET', 'POST'])
@@ -312,7 +267,7 @@ class IngestHubRoutes:
                 return render_template('job-suffix.html', form=form, logged_in=current_user.is_authenticated)
             except Exception as e:
                 self.logger.log_msg("error", f"Error in job_suffix route: {e}")
-                flash(f"Error in job_suffix route: {e}","error")
+                flash(f"Error in job_suffix route: {e}", "error")
                 return redirect(url_for('load_templates'))
 
         @self.app.route('/submit-job', methods=['GET', 'POST'])
@@ -340,7 +295,7 @@ class IngestHubRoutes:
                     return redirect(url_for('recent_jobs', logged_in=current_user.is_authenticated))
             except Exception as e:
                 self.logger.log_msg("error", f"Error in submit_job route: {e}")
-                flash(f"Error in submit_job route: {e}","error")
+                flash(f"Error in submit_job route: {e}", "error")
                 return redirect(url_for('load_templates'))
 
         @self.app.route('/jobs', methods=['GET', 'POST'])
@@ -375,7 +330,6 @@ class IngestHubRoutes:
                 self.logger.log_msg("error", f"Error in recent_jobs route: {e}")
                 flash(f"Error in recent_jobs route: {e}")
                 return redirect(url_for('about'))
-
 
         @self.app.route('/logout')
         def logout():
@@ -433,7 +387,7 @@ if __name__ == "__main__":
     db_manager = DatabaseManager()
     ingest_hub = IngestHubConfig()
     # Make sure tables are created
-    ingest_hub.create_tables()
+    ingest_hub.initialize_db()
     # Configure authentication
     authenticator = IngestHubAuthenticator(ingest_hub.app)
     # Instance for form generation
