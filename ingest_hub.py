@@ -85,7 +85,7 @@ class IngestHubAuthenticator:
                 return self.db_manager.db.get_or_404(User, user_id)
             except Exception as e:
                 self.logger.error(f"Error loading user with ID {user_id}: {e}")
-                return None  # Optionally return None or handle as needed
+                return None
 
 
 # Routes class to handle all routing and app logic
@@ -381,27 +381,8 @@ class JobTemplateManager:
         except Exception as e:
             self.logger.error(
                 f"Error retrieving job template for source '{source}' and destination '{destination}': {e}")
-            return None  # Optionally return None or handle as needed
+            return None
 
-
-# if __name__ == "__main__":
-#     # initialize DB manager
-#     db_manager = DatabaseManager()
-#     ingest_hub = IngestHubConfig()
-#     app = ingest_hub.app
-#     # Make sure tables are created
-#     ingest_hub.initialize_db()
-#     # Configure authentication
-#     authenticator = IngestHubAuthenticator(ingest_hub.app)
-#     # Instance for form generation
-#     form_generator = FormGenerator()
-#     # Instance for managing job templates
-#     job_template_manager = JobTemplateManager()
-#     # Set up app routes
-#     app_routes = IngestHubRoutes(ingest_hub.app, ingest_hub.db_manager, form_generator,
-#                                  job_template_manager)
-#     # Start the app
-#     ingest_hub.run()
 
 # Define db_manager and create an instance of IngestHubConfig
 db_manager = DatabaseManager()
