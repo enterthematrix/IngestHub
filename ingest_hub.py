@@ -382,36 +382,37 @@ class JobTemplateManager:
             return None  # Optionally return None or handle as needed
 
 
-# if __name__ == "__main__":
-#     # initialize DB manager
-#     db_manager = DatabaseManager()
-#     ingest_hub = IngestHubConfig()
-#     app = ingest_hub.app
-#     # Make sure tables are created
-#     ingest_hub.initialize_db()
-#     # Configure authentication
-#     authenticator = IngestHubAuthenticator(ingest_hub.app)
-#     # Instance for form generation
-#     form_generator = FormGenerator()
-#     # Instance for managing job templates
-#     job_template_manager = JobTemplateManager()
-#     # Set up app routes
-#     app_routes = IngestHubRoutes(ingest_hub.app, ingest_hub.db_manager, form_generator,
-#                                  job_template_manager)
-#     # Start the app
-#     ingest_hub.run()
-# Define db_manager and create an instance of IngestHubConfig
-db_manager = DatabaseManager()
-ingest_hub = IngestHubConfig()
-app = ingest_hub.app  # Make `app` available at the module level
-
-# Initialize other components
-authenticator = IngestHubAuthenticator(app)
-form_generator = FormGenerator()
-job_template_manager = JobTemplateManager()
-app_routes = IngestHubRoutes(app, db_manager, form_generator, job_template_manager)
-
 if __name__ == "__main__":
-    # Initialize the database and run the app in debug mode
+    # initialize DB manager
+    db_manager = DatabaseManager()
+    ingest_hub = IngestHubConfig()
+    app = ingest_hub.app
+    # Make sure tables are created
     ingest_hub.initialize_db()
+    # Configure authentication
+    authenticator = IngestHubAuthenticator(ingest_hub.app)
+    # Instance for form generation
+    form_generator = FormGenerator()
+    # Instance for managing job templates
+    job_template_manager = JobTemplateManager()
+    # Set up app routes
+    app_routes = IngestHubRoutes(ingest_hub.app, ingest_hub.db_manager, form_generator,
+                                 job_template_manager)
+    # Start the app
     ingest_hub.run()
+
+# # Define db_manager and create an instance of IngestHubConfig
+# db_manager = DatabaseManager()
+# ingest_hub = IngestHubConfig()
+# app = ingest_hub.app  # Make `app` available at the module level
+#
+# # Initialize other components
+# authenticator = IngestHubAuthenticator(app)
+# form_generator = FormGenerator()
+# job_template_manager = JobTemplateManager()
+# app_routes = IngestHubRoutes(app, db_manager, form_generator, job_template_manager)
+#
+# if __name__ == "__main__":
+#     # Initialize the database and run the app in debug mode
+#     ingest_hub.initialize_db()
+#     ingest_hub.run()
