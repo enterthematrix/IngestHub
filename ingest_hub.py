@@ -31,7 +31,7 @@ class IngestHubConfig:
         # Configure secret key and database URI
         self.app.config['SECRET_KEY'] = os.environ.get('FLASK_KEY')
         self.app.config[
-            'SQLALCHEMY_DATABASE_URI'] = 'sqlite:///streamsets.db'  # Ensure this is set before initializing db
+            'SQLALCHEMY_DATABASE_URI'] = os.environ.get('DB_URI','sqlite:///streamsets.db')  # Ensure this is set before initializing db
 
     def init_extensions(self):
         Bootstrap5(self.app)

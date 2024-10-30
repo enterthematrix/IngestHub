@@ -11,7 +11,7 @@ from ingesthub_logger import Logger
 # Database and Flask Configuration as a separate class
 class Config:
     SECRET_KEY = os.environ.get('FLASK_KEY')
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///streamsets.db'
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DB_URI','sqlite:///streamsets.db')
 
 
 # Flask App Class
