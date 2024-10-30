@@ -406,6 +406,7 @@ class JobTemplateManager:
 # Define db_manager and create an instance of IngestHubConfig
 db_manager = DatabaseManager()
 ingest_hub = IngestHubConfig()
+ingest_hub.initialize_db()
 app = ingest_hub.app  # Make `app` available at the module level
 
 # Initialize other components
@@ -416,5 +417,5 @@ app_routes = IngestHubRoutes(app, db_manager, form_generator, job_template_manag
 
 if __name__ == "__main__":
     # Initialize the database and run the app in debug mode
-    ingest_hub.initialize_db()
+    # ingest_hub.initialize_db()
     ingest_hub.run()
