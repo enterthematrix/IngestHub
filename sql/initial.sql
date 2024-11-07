@@ -54,4 +54,4 @@ INSERT INTO ingestion_pattern_job_template_relationship (ingestion_pattern_id, j
 SELECT p.ingestion_pattern_id, t.job_template_id
 FROM ingestion_pattern p, job_template t
 WHERE p.source = 'FS/NFS' AND p.destination = 'MySQL'
-AND t.sch_job_template_id = '7200fe5b-93d8-405f-b1ff-3ac1276120bf:241d5ea9-f21d-11eb-a19e-07108e36db4e';
+AND t.sch_job_template_id = 'e189b61f-6721-4c66-a63b-7de45970f34f:241d5ea9-f21d-11eb-a19e-07108e36db4e';
