@@ -43,13 +43,13 @@ class StreamSetsManager:
                 try:
                     # Load credentials from environment variables
                     # CS in the env name refers to the SCH Org
-                    self.cred_id = os.environ.get('CRED_ID_CS')
-                    self.cred_token = os.environ.get('CRED_TOKEN_CS')
+                    self.cred_id = os.environ.get('CRED_ID_INGESTHUB')
+                    self.cred_token = os.environ.get('CRED_TOKEN_INGESTHUB')
 
                     # Check if credentials were loaded successfully
                     if not self.cred_id or not self.cred_token:
                         raise ValueError(
-                            "Missing credentials. Ensure both CRED_ID_CS and CRED_TOKEN_CS are set in environment variables."
+                            "Missing credentials. Ensure both CRED_ID_INGESTHUB and CRED_TOKEN_INGESTHUB are set in environment variables."
                         )
 
                 except ValueError as e:
