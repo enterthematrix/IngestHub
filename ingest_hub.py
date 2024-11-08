@@ -1,9 +1,10 @@
 import ast
 import math
 import os
+from datetime import time
 
 import pyfiglet
-from flask import Flask, render_template, redirect, url_for, flash, request
+from flask import Flask, render_template, redirect, url_for, flash, request, Response
 from flask_bootstrap import Bootstrap5
 from flask_ckeditor import CKEditor
 from flask_gravatar import Gravatar
@@ -332,6 +333,22 @@ class IngestHubRoutes:
                 self.logger.log_msg("error", f"Error in recent_jobs route: {e}")
                 flash(f"Error in recent_jobs route: {e}")
                 return redirect(url_for('about'))
+
+        @self.app.route('/logs')
+        @login_required
+        def stream():
+            def generate():
+                with open('ingest_hub.log') as log_file:
+                    # Move the pointer to the end of the file
+                    log_file.seek(0, 2)
+                    while True:
+                        line = log_file.readline()
+                        if line:
+                            yield f"data: {line}\n\n"
+                        else:
+                            time.sleep(1)
+
+            return Response(generate(), mimetype='text/event-stream')
 
         @self.app.route('/logout')
         def logout():
