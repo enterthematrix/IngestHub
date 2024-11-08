@@ -1,0 +1,36 @@
+{% include "header.html" %}
+<!-- Page Header-->
+<header
+        class="masthead"
+        style="background-image: url('../static/img/data-ingestion.jpg')"
+>
+    <div class="container position-relative px-4 px-lg-5">
+        <div class="row gx-4 gx-lg-5 justify-content-center">
+            <div class="col-md-10 col-lg-8 col-xl-7">
+                <div class="page-heading">
+                    <h2>StreamSets Self-Service Ingestion</h2>
+                    <span class="subheading">Democratization Your Data</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+<!-- Main Content-->
+<main class="mb-4">
+    <body>
+    <h1>Live Log Stream</h1>
+    <div id="log-container" style="border: 1px solid #000; padding: 10px; height: 300px; overflow-y: scroll;"></div>
+
+    <script>
+        const eventSource = new EventSource('/logs');
+        eventSource.onmessage = function(event) {
+            const logContainer = document.getElementById('log-container');
+            const newLog = document.createElement('div');
+            newLog.textContent = event.data;
+            logContainer.appendChild(newLog);
+            logContainer.scrollTop = logContainer.scrollHeight; // Auto-scroll to the bottom
+        };
+    </script>
+</body>
+</main>
+{% include "footer.html" %}
