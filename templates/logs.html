@@ -22,7 +22,7 @@
     <div id="log-container" style="border: 1px solid #000; padding: 10px; height: 300px; overflow-y: scroll;"></div>
 
     <script>
-        const eventSource = new EventSource('/logs');
+        const eventSource = new EventSource('/stream_logs');
         eventSource.onmessage = function(event) {
             const logContainer = document.getElementById('log-container');
             const newLog = document.createElement('div');

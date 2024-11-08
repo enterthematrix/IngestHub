@@ -334,13 +334,15 @@ class IngestHubRoutes:
                 flash(f"Error in recent_jobs route: {e}")
                 return redirect(url_for('about'))
 
-        @self.app.route('/logs')
+        @self.app.route('/stream_logs', methods=['GET', 'POST'])
         @login_required
-        def stream():
+        def stream_logs():
+            if request.method == 'GET':
+                return render_template('logs.html')
+
             def generate():
                 with open('ingest_hub.log') as log_file:
-                    # Move the pointer to the end of the file
-                    log_file.seek(0, 2)
+                    log_file.seek(0, 2)  # Move the pointer to the end of the file
                     while True:
                         line = log_file.readline()
                         if line:
@@ -348,6 +350,7 @@ class IngestHubRoutes:
                         else:
                             time.sleep(1)
 
+            # Return the streaming response when accessed with a POST request
             return Response(generate(), mimetype='text/event-stream')
 
         @self.app.route('/logout')
