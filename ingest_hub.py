@@ -1,7 +1,8 @@
 import ast
 import math
 import os
-from datetime import time
+import time
+import re
 
 import pyfiglet
 from flask import Flask, render_template, redirect, url_for, flash, request, Response
@@ -26,7 +27,7 @@ class IngestHubConfig:
         self.db_manager = db_manager
         self.configure_app()
         self.init_extensions()
-        print(pyfiglet.Figlet(font='big', width=80).renderText('IngestHub'))
+        self.logger.log_msg("info", pyfiglet.Figlet(font='big', width=80).renderText('IngestHub'))
 
     def configure_app(self):
         # Configure secret key and database URI
@@ -334,23 +335,28 @@ class IngestHubRoutes:
                 flash(f"Error in recent_jobs route: {e}")
                 return redirect(url_for('about'))
 
-        @self.app.route('/stream_logs', methods=['GET', 'POST'])
+        @self.app.route('/stream_logs', methods=['GET'])
         @login_required
-        def stream_logs():
-            if request.method == 'GET':
-                return render_template('logs.html')
+        def stream_logs_page():
+            return render_template('logs.html', logged_in=current_user.is_authenticated)
 
+        @self.app.route('/stream_logs_feed', methods=['GET'])
+        @login_required
+        def stream_logs_feed():
+            # Regular expression to match ANSI escape sequences
+            ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
             def generate():
-                with open('ingest_hub.log') as log_file:
+                with open('ingest_hub.log', 'r') as log_file:
                     log_file.seek(0, 2)  # Move the pointer to the end of the file
                     while True:
-                        line = log_file.readline()
-                        if line:
-                            yield f"data: {line}\n\n"
+                        log_line = log_file.readline()
+                        # Remove ASCII chars
+                        log_line = ansi_escape.sub('', log_line)
+                        if log_line:
+                            yield f"data: {log_line}\n\n"
                         else:
                             time.sleep(1)
 
-            # Return the streaming response when accessed with a POST request
             return Response(generate(), mimetype='text/event-stream')
 
         @self.app.route('/logout')

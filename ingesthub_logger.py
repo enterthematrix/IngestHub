@@ -1,4 +1,6 @@
 import logging
+import os
+
 from colorama import Fore, Style
 
 LOG_FILE = 'ingest_hub.log'
@@ -19,7 +21,7 @@ class Logger:
                 file_handler.setLevel(level)
 
                 # Logging format
-                formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+                formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 
                 console_handler.setFormatter(formatter)
                 file_handler.setFormatter(formatter)
@@ -49,5 +51,12 @@ class Logger:
                 case _:
                     self.logger.warning("Invalid log level specified; defaulting to warning.")
                     self.logger.warning(msg)
+
+            # Flush and sync for each handler
+            for handler in self.logger.handlers:
+                handler.flush()
+                if isinstance(handler, logging.FileHandler):
+                    os.fsync(handler.stream.fileno())
+
         except Exception as e:
             self.logger.error(f"Error logging message: {e}")
