@@ -18,7 +18,6 @@ from db_manager import User, IngestionPattern, IngestionPatternJobTemplateRelati
 from forms import RegisterForm, LoginForm, TemplateForm, FormGenerator, JobInstanceSuffixForm
 from ingesthub_logger import Logger
 
-
 JOBS_PER_PAGE = 6
 
 
@@ -35,7 +34,8 @@ class IngestHubConfig:
         # Configure secret key and database URI
         self.app.config['SECRET_KEY'] = os.environ.get('FLASK_KEY')
         self.app.config[
-            'SQLALCHEMY_DATABASE_URI'] = os.environ.get('DB_URI','sqlite:///streamsets.db')  # Ensure this is set before initializing db
+            'SQLALCHEMY_DATABASE_URI'] = os.environ.get('DB_URI',
+                                                        'sqlite:///streamsets.db')  # Ensure this is set before initializing db
 
     def init_extensions(self):
         Bootstrap5(self.app)
@@ -347,6 +347,7 @@ class IngestHubRoutes:
         def stream_logs_feed():
             # Regular expression to match ANSI escape sequences
             ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+
             def generate():
                 with open('ingest_hub.log', 'r') as log_file:
                     # Get the last N lines for initial output
@@ -434,6 +435,4 @@ job_template_manager = JobTemplateManager()
 app_routes = IngestHubRoutes(app, db_manager, form_generator, job_template_manager)
 
 if __name__ == "__main__":
-    # Initialize the database and run the app in debug mode
-    # ingest_hub.initialize_db()
     ingest_hub.run()
