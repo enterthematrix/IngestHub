@@ -3,6 +3,7 @@ import math
 import os
 import time
 import re
+from collections import deque
 
 import pyfiglet
 from flask import Flask, render_template, redirect, url_for, flash, request, Response
@@ -16,6 +17,7 @@ from db_manager import User, IngestionPattern, IngestionPatternJobTemplateRelati
     JobInstance
 from forms import RegisterForm, LoginForm, TemplateForm, FormGenerator, JobInstanceSuffixForm
 from ingesthub_logger import Logger
+
 
 JOBS_PER_PAGE = 6
 
@@ -298,8 +300,8 @@ class IngestHubRoutes:
                     flash(f"Job: [{job.job_name}] submitted successfully", "success")
                     return redirect(url_for('recent_jobs', logged_in=current_user.is_authenticated))
             except Exception as e:
-                self.logger.log_msg("error", f"Error in submit_job route: {e}")
-                flash(f"Error in submit_job route: {e}", "error")
+                self.logger.log_msg("error", f"Error while submitting the job, see logs for error details")
+                flash(f"Error while submitting the job, see logs for error details", "error")
                 return redirect(url_for('load_templates'))
 
         @self.app.route('/jobs', methods=['GET', 'POST'])
@@ -347,10 +349,19 @@ class IngestHubRoutes:
             ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
             def generate():
                 with open('ingest_hub.log', 'r') as log_file:
-                    log_file.seek(0, 2)  # Move the pointer to the end of the file
+                    # Get the last N lines for initial output
+                    log_file.seek(0, os.SEEK_END)
+                    file_size = log_file.tell()
+                    log_file.seek(max(file_size - 10 * 1024, 0), os.SEEK_SET)  # Adjust buffer size as needed
+
+                    last_lines = deque(log_file, maxlen=50)  # Load the last 50 lines
+                    for line in last_lines:
+                        clean_line = ansi_escape.sub('', line)
+                        yield f"data: {clean_line}\n\n"
+
+                    # Continue streaming new lines
                     while True:
                         log_line = log_file.readline()
-                        # Remove ASCII chars
                         log_line = ansi_escape.sub('', log_line)
                         if log_line:
                             yield f"data: {log_line}\n\n"
