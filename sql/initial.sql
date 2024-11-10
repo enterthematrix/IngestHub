@@ -35,13 +35,13 @@ CURRENT_TIMESTAMP);
 INSERT INTO ingestion_pattern_job_template_relationship (ingestion_pattern_id, job_template_id)
 SELECT p.ingestion_pattern_id, t.job_template_id
 FROM ingestion_pattern p, job_template t
-WHERE p.source = 'FS/NFS' AND p.destination = 'ADLS'
+WHERE p.source = 'FS/NFS' AND p.destination = 'DeltaLake'
 AND t.sch_job_template_id = 'f3cd513b-d394-47d4-a011-6ee65d66fc1b:241d5ea9-f21d-11eb-a19e-07108e36db4e';
 
 INSERT INTO ingestion_pattern_job_template_relationship (ingestion_pattern_id, job_template_id)
 SELECT p.ingestion_pattern_id, t.job_template_id
 FROM ingestion_pattern p, job_template t
-WHERE p.source = 'FS/NFS' AND p.destination = 'DeltaLake'
+WHERE p.source = 'FS/NFS' AND p.destination = 'ADLS'
 AND t.sch_job_template_id = '464804d7-987c-4176-b66c-1834bf3f95c9:241d5ea9-f21d-11eb-a19e-07108e36db4e';
 
 INSERT INTO ingestion_pattern_job_template_relationship (ingestion_pattern_id, job_template_id)
