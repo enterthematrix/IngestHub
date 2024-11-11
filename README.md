@@ -1,6 +1,23 @@
 # IngestHub
 
-## Benefits of Self-Service Data Ingestion
+## How it works?
+
+```commandline
+* The app allows users to take advantage of pre-built StreamSets Job template to ingest data to/from a variety of data sources.
+* No in-depth StreamSets knowledge required
+```
+
+1. Users will be able to pick from a range of origin and destinations they want to work with.
+2. Based on the origin/destination selection, a pre-defined template will be selected
+3. Users will be able to change the runtime configurations for the origin/destination ** [except static parameters]
+4. On submit, the app will launch a new StreamSets job using the parameters specified in #3. 
+5. The completed job details can be viewed on the jobs page
+
+<img src="static/img/IngestHub.jpg" alt="overview" width="700" />
+
+## Why enable Self-Service Data Ingestion ? 
+Key benefits:
+
 1. Self-service ingestion allows enterprises to move away from a fragmented approach to data capturing, enrichment, and processing.
 
 2. Empowers everyone in an organization to make data-driven decisions by making a broad range of data sources available for analytics purpose.
@@ -37,16 +54,3 @@ CRED_TOKEN=<SCH CRED_TOKEN>
 1. Run 'python ingest_hub.py'
 2. Hit 'http://localhost:5003' in the browser
 
-## How it works?
-
-```commandline
-* The app allows users to take advantage of pre-built StreamSets Job template to ingest data to/from a variety of data sources.
-* No in-depth StreamSets knowledge required
-```
-
-
-1. Users will be able to pick from a range of origin and destinations they want to work with.
-2. Based on the origin/destination selection, a pre-defined template will be selected
-3. Users will be able to change the runtime configurations for the origin/destination ** [except static parameters]
-4. On submit, the app will launch a new StreamSets job using the parameters specified in #3. 
-5. The completed job details can be viewed on the jobs page
