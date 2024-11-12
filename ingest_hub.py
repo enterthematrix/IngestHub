@@ -67,7 +67,7 @@ class IngestHubConfig:
             self.db_manager.db.session.rollback()
 
     def run(self):
-        self.app.run(debug=True, port=5003)
+        self.app.run(host='0.0.0.0', debug=True, port=5003)
 
 
 # Authenticator class to handle user authentication
