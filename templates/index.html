@@ -1,46 +1,58 @@
 {% include "header.html" %}
 <!-- Page Header-->
 <header
-        class="masthead"
-        style="background-image: url('../static/img/data-ingestion.jpg'); background-size: cover; background-position: center;"
+ class="masthead"
+ style="background-image: url('../static/img/data-ingestion.jpg'); background-size: cover; background-position: center;"
 >
-    <div class="container position-relative px-4 px-lg-5">
-        <div class="overlay" style="background: rgba(0, 0, 0, 0.5); padding: 50px 0; color: #fff;">
-            <div class="row gx-4 gx-lg-5 justify-content-center">
-                <div class="col-md-10 col-lg-8 col-xl-7 text-center">
-                    <div class="page-heading">
-                        <h2 style="font-size: 3rem; font-weight: bold; margin-bottom: 0.5rem;">StreamSets Self-Service
-                            Ingestion</h2>
-                        <span class="subheading" style="font-size: 1.5rem;">Democratization Your Data</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+ <div class="container position-relative px-4 px-lg-5">
+ <div class="overlay" style="background: rgba(0, 0, 0, 0.5); padding: 50px 0; color: #fff;">
+ <div class="row gx-4 gx-lg-5 justify-content-center">
+ <div class="col-md-10 col-lg-8 col-xl-7 text-center">
+ <div class="page-heading">
+ <h2 style="font-size: 3rem; font-weight: bold; margin-bottom: 0.5rem;">StreamSets Self-Service
+ Ingestion</h2>
+ <span class="subheading" style="font-size: 1.5rem;">Democratization Your Data</span>
+ </div>
+ </div>
+ </div>
+ </div>
+ </div>
 </header>
 
 <!-- Main Content-->
 <main class="mb-4" style="padding: 2rem 0; font-family: 'Georgia', serif; color: #333;">
-    <div class="container px-4 px-lg-5">
-        <div class="row gx-4 gx-lg-5 justify-content-center">
-            <div class="col-md-10 col-lg-8 col-xl-7">
-                <p style="line-height: 1.8; margin-bottom: 1.5rem;">
-                    <strong>Benefits of Self-Service Data Ingestion</strong>
-                </p>
-                <ul style="line-height: 1.8; margin-left: 1.5rem; padding-left: 1.5rem; list-style-type: disc;">
-                    <li>Self-service ingestion allows enterprises to move away from a fragmented approach to data
-                        capturing, enrichment, and processing.
-                    </li>
-                    <li>Empowers everyone in an organization to make data-driven decisions by making a broad range of
-                        data sources available for analytics purposes.
-                    </li>
-                    <li>Empowers non-technical users to replicate data for their analytics needs.</li>
-                    <li>Empowers users to focus on high-value analytics vs creating/maintaining ETL jobs.</li>
-                    <li>Self-Service data ingestion is inherently scalable and performant.</li>
-                    <li>Democratize new data sources faster and at-scale.</li>
-                </ul>
-            </div>
-        </div>
-    </div>
+ <div class="container px-4 px-lg-5">
+ <div class="row gx-4 gx-lg-5 justify-content-center">
+ <div class="col-md-10 col-lg-8 col-xl-7">
+ <p style="line-height: 1.8; margin-bottom: 1.5rem;">
+ <strong>How it works?</strong>
+ </p>
+ <ul style="line-height: 1.8; margin-left: 1.5rem; padding-left: 1.5rem; list-style-type: disc;">
+ <li>The app allows users to take advantage of pre-built StreamSets Job templates to ingest data to/from a variety of data sources.</li>
+ <li>No in-depth StreamSets knowledge required.</li>
+ <li>Users will be able to pick from a range of origin and destinations they want to work with.</li>
+ <li>Based on the origin/destination selection, a pre-defined template will be selected.</li>
+ <li>Users will be able to change the runtime configurations for the origin/destination <strong>[except static parameters]</strong>.</li>
+ <li>On submit, the app will launch a new StreamSets job using the specified parameters. </li>
+ <li>The completed job details can be viewed on the jobs page.</li>
+ </ul>
+ <div style="text-align: center; margin: 1.5rem 0;">
+   <img src="../static/img/IngestHub.jpg" alt="Diagram of How It Works" style="max-width: 100%; height: auto;">
+ </div>
+
+ <p style="line-height: 1.8; margin-bottom: 1.5rem;">
+ <strong>Benefits of Self-Service Data Ingestion</strong>
+ </p>
+ <ul style="line-height: 1.8; margin-left: 1.5rem; padding-left: 1.5rem; list-style-type: disc;">
+ <li>Self-service ingestion allows enterprises to move away from a fragmented approach to data capturing, enrichment, and processing.</li>
+ <li>Empowers everyone in an organization to make data-driven decisions by making a broad range of data sources available for analytics purposes.</li>
+ <li>Empowers non-technical users to replicate data for their analytics needs.</li>
+ <li>Empowers users to focus on high-value analytics vs creating/maintaining ETL jobs.</li>
+ <li>Self-Service data ingestion is inherently scalable and performant.</li>
+ <li>Democratize new data sources faster and at-scale.</li>
+ </ul>
+ </div>
+ </div>
+ </div>
 </main>
 {% include "footer.html" %}
