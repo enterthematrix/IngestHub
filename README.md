@@ -53,4 +53,3 @@ CRED_TOKEN=<SCH CRED_TOKEN>
 ## To run the app:
 1. Run 'python ingest_hub.py'
 2. Hit 'http://localhost:5003' in the browser
-
